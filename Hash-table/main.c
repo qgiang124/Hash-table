@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #define TABLE_SIZE 10
+#define DELETED_NODE (Student*) (0xFFFFFFFFFFFFFFUL)
 
 typedef struct student {
     char* name;
@@ -66,33 +67,64 @@ void print_table(){
 bool hash_table_insert(Student* student) {
     if (student == NULL) return false;
     int index = hash(student->name);
-    if (hash_table[index] != NULL) {
-        return false;
+    
+    //try a new approach to create a more efficient hash table
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (i + index) % TABLE_SIZE;
+        if (hash_table[try] == NULL || hash_table[try] == DELETED_NODE) {
+            hash_table[try] = student;
+            return true;
+        }
     }
-    hash_table[index] = student;
-    return true;
+//    if (hash_table[index] != NULL) {
+//        return false;
+//    }
+//    hash_table[index] = student;
+    return false;
 }
+
 
  //find a person in the table by their name
 Student* hash_table_lookup(char* name) {
     int index = hash(name);
-    if (hash_table[index] != NULL && strncmp(hash_table[index]->name, name, TABLE_SIZE) == 0) {
-        return hash_table[index];
-    } else {
-        return NULL;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (index + i) % TABLE_SIZE;
+        if (hash_table[try] == NULL) {
+            return false;
+        }
+        if (hash_table[try] == DELETED_NODE) continue;
+        if (strncmp(hash_table[try]->name, name, TABLE_SIZE) == 0) {
+            return hash_table[try];
+        }
     }
+    return NULL;
 }
+
+//Student* hash_table_delete(char* name) {
+//    int index = hash(name);
+//    if (hash_table[index] != NULL && strncmp(hash_table[index]->name, name, TABLE_SIZE) == 0){
+//        Student* tmp = hash_table[index];
+//        hash_table[index] = NULL;
+//        return tmp;
+//    }
+//    else {
+//        return NULL;
+//    }
+//}
 
 Student* hash_table_delete(char* name) {
     int index = hash(name);
-    if (hash_table[index] != NULL && strncmp(hash_table[index]->name, name, TABLE_SIZE) == 0){
-        Student* tmp = hash_table[index];
-        hash_table[index] = NULL;
-        return tmp;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (index + i) % TABLE_SIZE;
+        if (hash_table[try] == NULL) return NULL;
+        if (hash_table[try] == DELETED_NODE) continue;
+        if (strncmp(hash_table[try]->name, name, TABLE_SIZE) == 0) {
+            Student* tmp = hash_table[try];
+            hash_table[try] = DELETED_NODE;
+            return tmp;
+        }
     }
-    else {
-        return NULL;
-    }
+    return NULL;
 }
 
 int main(int argc, const char * argv[]) {
@@ -120,7 +152,7 @@ int main(int argc, const char * argv[]) {
 //        printf("Found %s.\n", tmp->name);
 //    }
     
-    hash_table_delete("Lizzy");
+//    hash_table_delete("Lizzy");
     Student *tmp = hash_table_lookup("Lizzy");
     if(tmp == NULL) {
         printf("Not found!\n");
